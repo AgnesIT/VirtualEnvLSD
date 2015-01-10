@@ -20,7 +20,7 @@ public class AvatarController : MonoBehaviour
 	
 	// Bool that determines whether the avatar is allowed to jump -- vertical movement
 	// can cause some models to behave strangely, so use at your own discretion.
-	public bool VerticalMovement = false;
+	public bool VerticalMovement = true;
 	
 	// Rate at which avatar will move through the scene. The rate multiplies the movement speed (.001f, i.e dividing by 1000, unity's framerate).
 	public int MoveRate = 1;

@@ -11,6 +11,8 @@ public class GestureListener : MonoBehaviour, KinectGestures.GestureListenerInte
 	
 	private bool swipeLeft;
 	private bool swipeRight;
+	private bool raiseLeftHand;
+	private bool raiseRightHand;
 	private bool swipeUp;
 	private bool swipeDown;
 	static bool isGoing=false;
@@ -20,14 +22,25 @@ public class GestureListener : MonoBehaviour, KinectGestures.GestureListenerInte
 	{
 		if (isGoing == true) {
 
-			transform.position += transform.forward * (Time.deltaTime * 3);
+			//rigidbody.MovePosition(transform.forward * (Time.deltaTime * 2));
+			
+			GameObject player = GameObject.Find("Player");
+			CharacterController cc = player.GetComponent<CharacterController>();
 
-		
+			if(cc.isGrounded)
+			{
+				Vector3 v = transform.forward * (Time.deltaTime * 2);
+				//cc.Move(v);
+				//transform.position += v; //TODO
+				Debug.Log ("Position: " + v);
+
+				Vector3 forward = transform.TransformDirection(Vector3.forward);
+				//float curSpeed = speed * Input.GetAxis ("Vertical");
+				float curSpeed = 2;
+				cc.SimpleMove(forward * curSpeed);
+			}
 
 				}
-
-
-
 	}
 
 	public bool IsSwipeLeft()
@@ -54,9 +67,9 @@ public class GestureListener : MonoBehaviour, KinectGestures.GestureListenerInte
 	
 	public bool IsSwipeUp()
 	{
-		if(swipeUp)
+		if(raiseLeftHand)
 		{
-			swipeUp = false;
+			raiseLeftHand = false;
 			return true;
 		}
 		
@@ -65,9 +78,9 @@ public class GestureListener : MonoBehaviour, KinectGestures.GestureListenerInte
 	
 	public bool IsSwipeDown()
 	{
-		if(swipeDown)
+		if(raiseRightHand)
 		{
-			swipeDown = false;
+			raiseRightHand = false;
 			return true;
 		}
 		
@@ -82,6 +95,8 @@ public class GestureListener : MonoBehaviour, KinectGestures.GestureListenerInte
 		Debug.Log ("Wykrylem usera");
 		manager.DetectGesture(userId, KinectGestures.Gestures.SwipeLeft);
 		manager.DetectGesture(userId, KinectGestures.Gestures.SwipeRight);
+		//manager.DetectGesture(userId, KinectGestures.Gestures.RaiseLeftHand);
+		//manager.DetectGesture(userId, KinectGestures.Gestures.RaiseRightHand);
 		manager.DetectGesture(userId, KinectGestures.Gestures.Jump);
 //		manager.DetectGesture(userId, KinectGestures.Gestures.SwipeUp);
 //		manager.DetectGesture(userId, KinectGestures.Gestures.SwipeDown);
@@ -116,9 +131,13 @@ public class GestureListener : MonoBehaviour, KinectGestures.GestureListenerInte
 		}
 		Debug.Log ("wykrylem ruch" + gesture);
 		if (gesture == KinectGestures.Gestures.SwipeLeft)
-						transform.Rotate (0, 30, 0, Space.World);
+						transform.Rotate (0, 45, 0, Space.World);
 				else if (gesture == KinectGestures.Gestures.SwipeRight)
-						transform.Rotate (0, -30, 0, Space.World);
+						transform.Rotate (0, -45, 0, Space.World);
+				else if (gesture == KinectGestures.Gestures.RaiseLeftHand)
+						transform.Rotate (0, 5, 0, Space.World);
+				else if (gesture == KinectGestures.Gestures.RaiseRightHand)
+						transform.Rotate (0, -5, 0, Space.World);
 				else if (gesture == KinectGestures.Gestures.Jump) {
 
 			if (isGoing == false)
