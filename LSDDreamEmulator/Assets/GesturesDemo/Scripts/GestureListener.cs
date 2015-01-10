@@ -29,10 +29,10 @@ public class GestureListener : MonoBehaviour, KinectGestures.GestureListenerInte
 
 			if(cc.isGrounded)
 			{
-				Vector3 v = transform.forward * (Time.deltaTime * 2);
+				//Vector3 v = transform.forward * (Time.deltaTime * 2);
 				//cc.Move(v);
 				//transform.position += v; //TODO
-				Debug.Log ("Position: " + v);
+				//Debug.Log ("Position: " + v);
 
 				Vector3 forward = transform.TransformDirection(Vector3.forward);
 				//float curSpeed = speed * Input.GetAxis ("Vertical");
