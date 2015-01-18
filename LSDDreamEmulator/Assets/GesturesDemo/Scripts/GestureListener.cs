@@ -8,152 +8,126 @@ public class GestureListener : MonoBehaviour, KinectGestures.GestureListenerInte
 {
 	// GUI Text to display the gesture messages.
 	public GUIText GestureInfo;
-	
-	private bool swipeLeft;
-	private bool swipeRight;
-	private bool raiseLeftHand;
-	private bool raiseRightHand;
-	private bool swipeUp;
-	private bool swipeDown;
-	static bool isGoing=false;
 	private Vector3 directionVector;
 	public GameObject motor; 
+	CharacterController cc;
+
+	private const float BASE_SPEED = 0.5f;
+	private const float BASE_TURNRATE = 0.5f;
+	private const int TURNING_FRAMES = 180;
+	private const float DEFAULT_JUMP_SPEED = 15.0f;
+
+	private float curSpeed = BASE_SPEED;
+	private float turnRate = 0;
+	private int turnCounter = 0;
+	private bool willJump = false;
+	private bool hasPoweredUp = false;
+
 	public void Update()
 	{
-		if (isGoing == true) {
+		if (cc.isGrounded) {
+			if (willJump) {
+				willJump = false;
+				Vector3 upward = transform.TransformDirection (Vector3.up);
+				float jumpSpeed = DEFAULT_JUMP_SPEED;
 
-			//rigidbody.MovePosition(transform.forward * (Time.deltaTime * 2));
-			
-			GameObject player = GameObject.Find("Player");
-			CharacterController cc = player.GetComponent<CharacterController>();
-
-			if(cc.isGrounded)
-			{
-				//Vector3 v = transform.forward * (Time.deltaTime * 2);
-				//cc.Move(v);
-				//transform.position += v; //TODO
-				//Debug.Log ("Position: " + v);
-
-				Vector3 forward = transform.TransformDirection(Vector3.forward);
-				//float curSpeed = speed * Input.GetAxis ("Vertical");
-				float curSpeed = 2;
-				cc.SimpleMove(forward * curSpeed);
-			}
-
+				if (hasPoweredUp) {
+					hasPoweredUp = false;
+					jumpSpeed *= 2;
 				}
-	}
 
-	public bool IsSwipeLeft()
-	{
-		if(swipeLeft)
-		{
-			swipeLeft = false;
-			return true;
-		}
-		
-		return false;
+				Vector3 newPos = cc.transform.position;
+				newPos.y += jumpSpeed;
+				cc.transform.position = newPos;
+			} else {
+				Vector3 forward = transform.TransformDirection (Vector3.forward);
+				cc.Move (forward * curSpeed * Time.deltaTime);
+
+				if (turnCounter-- > 0) {
+					transform.Rotate (0, turnRate, 0, Space.World);
+				}
+			}
 	}
-	
-	public bool IsSwipeRight()
-	{
-		if(swipeRight)
-		{
-			swipeRight = false;
-			return true;
-		}
-		
-		return false;
-	}
-	
-	public bool IsSwipeUp()
-	{
-		if(raiseLeftHand)
-		{
-			raiseLeftHand = false;
-			return true;
-		}
-		
-		return false;
-	}
-	
-	public bool IsSwipeDown()
-	{
-		if(raiseRightHand)
-		{
-			raiseRightHand = false;
-			return true;
-		}
-		
-		return false;
-	}
-	
 
 	public void UserDetected(uint userId, int userIndex)
 	{
+		GameObject player = GameObject.Find ("Player");
+		if (player != null) {
+			Component comp = player.GetComponent<CharacterController> ();
+			if(comp != null) {
+				cc = (CharacterController) comp;
+			}
+		}
+
 		// detect these user specific gestures
 		KinectManager manager = KinectManager.Instance;
-		Debug.Log ("Wykrylem usera");
+		
 		manager.DetectGesture(userId, KinectGestures.Gestures.SwipeLeft);
 		manager.DetectGesture(userId, KinectGestures.Gestures.SwipeRight);
-		//manager.DetectGesture(userId, KinectGestures.Gestures.RaiseLeftHand);
-		//manager.DetectGesture(userId, KinectGestures.Gestures.RaiseRightHand);
+		manager.DetectGesture(userId, KinectGestures.Gestures.RaiseLeftHand);
+		manager.DetectGesture(userId, KinectGestures.Gestures.RaiseRightHand);
+		manager.DetectGesture(userId, KinectGestures.Gestures.Psi);
+		manager.DetectGesture(userId, KinectGestures.Gestures.Stop);
 		manager.DetectGesture(userId, KinectGestures.Gestures.Jump);
-//		manager.DetectGesture(userId, KinectGestures.Gestures.SwipeUp);
-//		manager.DetectGesture(userId, KinectGestures.Gestures.SwipeDown);
-		
-		if(GestureInfo != null)
-		{
-			GestureInfo.guiText.text = "Swipe left or right to change the slides.";
-		}
+		manager.DetectGesture(userId, KinectGestures.Gestures.Squat);
+		manager.DetectGesture(userId, KinectGestures.Gestures.Push);
+		manager.DetectGesture(userId, KinectGestures.Gestures.Pull);
+		manager.DetectGesture(userId, KinectGestures.Gestures.ZoomIn);
+		manager.DetectGesture(userId, KinectGestures.Gestures.ZoomOut);
 	}
 	
 	public void UserLost(uint userId, int userIndex)
 	{
-		if(GestureInfo != null)
-		{
-			GestureInfo.guiText.text = string.Empty;
-		}
 	}
 
 	public void GestureInProgress(uint userId, int userIndex, KinectGestures.Gestures gesture, 
 		float progress, KinectWrapper.SkeletonJoint joint, Vector3 screenPos)
 	{
-		// don't do anything here
 	}
 
 	public bool GestureCompleted (uint userId, int userIndex, KinectGestures.Gestures gesture, 
 		KinectWrapper.SkeletonJoint joint, Vector3 screenPos)
 	{
-		string sGestureText = gesture + " detected";
-		if(GestureInfo != null)
-		{
-			GestureInfo.guiText.text = sGestureText;
+		Debug.Log (gesture + " detected");
+
+		switch (gesture) {
+		case KinectGestures.Gestures.Stop:
+		case KinectGestures.Gestures.Psi:
+			hasPoweredUp = false;
+			break;
+		case KinectGestures.Gestures.Jump:
+			willJump = true;
+			break;
+		case KinectGestures.Gestures.Squat:
+			curSpeed = 0;
+			hasPoweredUp = true;
+			break;
+		case KinectGestures.Gestures.SwipeRight:
+		case KinectGestures.Gestures.RaiseLeftHand:
+			turnRate = -BASE_TURNRATE;
+			turnCounter = TURNING_FRAMES;
+			hasPoweredUp = false;
+			break;
+		case KinectGestures.Gestures.SwipeLeft:
+		case KinectGestures.Gestures.RaiseRightHand:
+			turnRate = BASE_TURNRATE;
+			turnCounter = TURNING_FRAMES;
+			hasPoweredUp = false;
+			break;
+		case KinectGestures.Gestures.Pull:
+		case KinectGestures.Gestures.ZoomIn:
+			curSpeed += BASE_SPEED;
+			hasPoweredUp = false;
+			break;
+		case KinectGestures.Gestures.Push:
+		case KinectGestures.Gestures.ZoomOut:
+			curSpeed -= BASE_SPEED;
+			if (curSpeed < 0)
+				curSpeed = 0;
+			hasPoweredUp = false;
+			break;
 		}
-		Debug.Log ("wykrylem ruch" + gesture);
-		if (gesture == KinectGestures.Gestures.SwipeLeft)
-						transform.Rotate (0, 45, 0, Space.World);
-				else if (gesture == KinectGestures.Gestures.SwipeRight)
-						transform.Rotate (0, -45, 0, Space.World);
-				else if (gesture == KinectGestures.Gestures.RaiseLeftHand)
-						transform.Rotate (0, 5, 0, Space.World);
-				else if (gesture == KinectGestures.Gestures.RaiseRightHand)
-						transform.Rotate (0, -5, 0, Space.World);
-				else if (gesture == KinectGestures.Gestures.Jump) {
 
-			if (isGoing == false)
-			{
-
-				isGoing = true;
-
-			}
-			else
-			{
-				isGoing = false;
-			}
-
-				}
-
-		
 		return true;
 	}
 
